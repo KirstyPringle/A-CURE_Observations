@@ -31,20 +31,17 @@ import re
 #variable_name = 'ORG'
 #variable_long_name = 'ORG_Concentrations_from_GASSP'
 
-variable_name = 'AOT_500'
-variable_long_name = 'AOT_500_from_AERONET'
+variable_name = 'AOT_440'
+variable_long_name = 'AOT_440_from_AERONET'
 
-start_year = 2000
-final_year = 2015
+start_year = 2005
+final_year = 2010
 month_to_average = 'Jul'  #  Need to use IRIS month naming convention.  Three letter month name
 
 
-
-
-
-
 # Location of GASSP data
-path = '/nfs/a201/earkpr/DataVisualisation/GASSP/AERONET/AOT/LEV20/monave/'
+path = '/nfs/a201/earkpr/DataVisualisation/GASSP/AERONET/AOT/LEV20/monave/JULY/'
+
 # path = '/nfs/a201/earkpr/DataVisualisation/GASSP/Nigel_Code/Level2/'
 
 #%%
@@ -95,7 +92,8 @@ for root, dirs, files in os.walk(str(path)):
 #for root, dirs, files in os.walk('/nfs/a201/earkpr/DataVisualisation/GASSP/'):
   for file in files: 
     if file.endswith('.nc'):
-        file_year = file[-10:-6]
+        ##file_year = file[-10:-6]
+        file_year = file[-18:-14]
 
         print ("file_year = ",float(file_year))
 
@@ -104,46 +102,56 @@ for root, dirs, files in os.walk(str(path)):
             print ("CHOSEN file_year = ",file_year)
 
             if str(variable_name) in file:           
-##                if str("Mainz") in file:           
+##                if str("Toronto") in file:           
                 ncfiles.append(os.path.join(root, file))
  
+print("ncfiles")
 print(ncfiles)
 
 # Read all cubes in list 
-cube_list = iris.load(ncfiles)
-print(cube_list)
+#cube_list = iris.load(ncfiles)
 
-for cube in cube_list:
-    if(cube.var_name == str(variable_name)):
-        print("")
-        print("")
-        print("INITIAL cube.data = ",cube.data)
 
-        for coord in cube.coords():
-            if(coord.var_name == "longitude"):
-                print (cube.var_name, "coord.points = ",coord.points)
-                station_lon = coord.points
-            if(coord.var_name == "latitude"):
-                print (cube.var_name, "coord.points = ",coord.points)
-                station_lat = coord.points
+for file in ncfiles:
 
-        # Find lat / lon of the observation.  For N48
-        index_lat = int((float(station_lat) + 90.0) / float(2.5))
-        index_lon = int((float(station_lon) / float(3.75)))
+    cubes = iris.load(file)
+   
+    for cube in cubes:
 
-        print(" index_lat = ", index_lat,"station_lat = ",station_lat)
-        print(" index_lon = ",index_lon, "station_lon = ",station_lon)
+        if(cube.var_name == str(variable_name)):
+            print("cube.var_name",cube.var_name)
+            aod_data = cube.data
+            print("aod_data = ",aod_data)
 
-        if(cube.data > 0.0):
-            print("cube.data > 0.0 = ",cube.data)
-            print("cube.data > 0.0 = ",np.float(cube.data))
+        if(cube.var_name == 'latitude'):
+            station_lat = cube.data
 
-            if(np.isnan(cube_destination_empty.data[index_lat,index_lon])):    #If NaN then no previous obs data in this gridbox
-                cube_destination_empty.data[index_lat,index_lon] = float(cube.data)
-                cube_average_count.data[index_lat,index_lon] = cube_average_count.data[index_lat,index_lon] + 1.0
-            else:
-                cube_destination_empty.data[index_lat,index_lon] = cube_destination_empty.data[index_lat,index_lon] + float(cube.data)
-                cube_average_count.data[index_lat,index_lon] = cube_average_count.data[index_lat,index_lon] + 1.0
+        if(cube.var_name == 'longitude'):
+            station_lon = cube.data
+
+    print("station_lon = ",station_lon)
+    print("station_lat = ",station_lat)
+
+
+    # Find lat / lon of the observation.  For N48
+
+    index_lat = int((float(station_lat) + 90.0) / float(2.5))
+    index_lon = int((float(station_lon) / float(3.75)))
+
+    print(" index_lat = ", index_lat,"station_lat = ",station_lat)
+    print(" index_lon = ",index_lon, "station_lon = ",station_lon)
+    
+    if(aod_data > 0.0):
+        print("cube.data > 0.0 = ",aod_data)
+        print("cube.data > 0.0 = ",np.float(aod_data))
+
+    if(np.isnan(cube_destination_empty.data[index_lat,index_lon])):    #If NaN then no previous obs data in this gridbox
+        cube_destination_empty.data[index_lat,index_lon] = float(aod_data)
+        cube_average_count.data[index_lat,index_lon] = cube_average_count.data[index_lat,index_lon] + 1.0
+    else:
+        cube_destination_empty.data[index_lat,index_lon] = cube_destination_empty.data[index_lat,index_lon] + float(aod_data)
+        cube_average_count.data[index_lat,index_lon] = cube_average_count.data[index_lat,index_lon] + 1.0
+
 
 # Average data in locations with more than one observation.
 
