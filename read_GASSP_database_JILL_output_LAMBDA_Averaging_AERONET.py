@@ -167,7 +167,7 @@ cube_list = [cube_destination_empty, cube_average_count]
 
 #%%
 
-iris.save(cube_list,"/nfs/a201/earkpr/DataVisualisation/GASSP/"+str(variable_name)+"_Concentration_"+str(start_year)+"_"+str(final_year)+"_LAMBDA_AVERAGED.nc")
+iris.save(cube_list,"/nfs/a201/earkpr/DataVisualisation/GASSP/"+str(variable_name)+"_"+str(start_year)+"_"+str(final_year)+"_"+str(month_to_average)+"_LAMBDA_AVERAGED.nc")
 
 
 sys.exit()
