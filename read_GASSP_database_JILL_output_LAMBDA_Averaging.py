@@ -35,13 +35,16 @@ def only_numerics(seq):
 # variable_long_name = 'PM2P5_Concentrations_from_GASSP_on_N48_grid'
 #variable_name = 'SO4'
 #variable_long_name = 'SO4_Concentrations_from_GASSP_on_N48_grid'
+
 start_year = 2005
-final_year = 2015
+final_year = 2010
 month_to_average = 'Jul'  #  Need to use IRIS month naming convention.  Three letter month name
 
 
-variable_names = ['SO4','ORG','PM2P5']
-variable_long_names = ['SO4_Concentrations_from_GASSP_on_N48_grid','ORG_Concentrations_from_GASSP_on_N48_grid','PM2P5_Concentrations_from_GASSP_on_N48_grid']
+#variable_names = ['SO4','ORG','PM2P5']
+#variable_long_names = ['SO4_Concentrations_from_GASSP_on_N48_grid','ORG_Concentrations_from_GASSP_on_N48_grid','PM2P5_Concentrations_from_GASSP_on_N48_grid']
+variable_names = ['SO4']
+variable_long_names = ['SO4_Concentrations_from_GASSP_on_N48_grid']
 
 
 for idx, variable_name in enumerate(variable_names):
@@ -92,7 +95,7 @@ for idx, variable_name in enumerate(variable_names):
       for file in files: 
         if file.endswith('.nc'):
             if str(variable_name) in file:           
-              if str("Station") in file:           
+              if str("Station") or str("Ship") in file:           
                 ncfiles.append(os.path.join(root, file))
                
     print(ncfiles)
@@ -215,7 +218,7 @@ for idx, variable_name in enumerate(variable_names):
 
     #%% 
 
-    iris.save(cube_list,"/nfs/a201/earkpr/DataVisualisation/GASSP/"+str(variable_name)+"_Concentration_"+str(start_year)+"_"+str(final_year)+"_LAMBDA_AVERAGED.nc")
+    iris.save(cube_list,"/nfs/a201/earkpr/DataVisualisation/GASSP/"+str(variable_name)+"_Concentration_"+str(start_year)+"_"+str(final_year)+"_"+str(month_to_average)+"_LAMBDA_AVERAGED.nc")
         
 
 sys.exit()
