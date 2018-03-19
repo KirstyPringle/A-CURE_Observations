@@ -41,10 +41,11 @@ final_year = 2010
 month_to_average = 'Jul'  #  Need to use IRIS month naming convention.  Three letter month name
 
 
-#variable_names = ['SO4','ORG','PM2P5']
-#variable_long_names = ['SO4_Concentrations_from_GASSP_on_N48_grid','ORG_Concentrations_from_GASSP_on_N48_grid','PM2P5_Concentrations_from_GASSP_on_N48_grid']
-variable_names = ['SO4']
-variable_long_names = ['SO4_Concentrations_from_GASSP_on_N48_grid']
+variable_names = ['SO4','ORG','PM2P5']
+variable_long_names = ['SO4_Concentrations_from_GASSP_on_N48_grid','ORG_Concentrations_from_GASSP_on_N48_grid','PM2P5_Concentrations_from_GASSP_on_N48_grid']
+
+#variable_names = ['SO4']
+#variable_long_names = ['SO4_Concentrations_from_GASSP_on_N48_grid']
 
 
 for idx, variable_name in enumerate(variable_names):
@@ -55,7 +56,8 @@ for idx, variable_name in enumerate(variable_names):
     print("variable_name = ", variable_name)
 
     # Location of GASSP data
-    path = '/nfs/a201/earkpr/DataVisualisation/GASSP/Nigel_Code/Level2/'
+    path = '/nfs/a201/earkpr/DataVisualisation/GASSP/GASSP_Level_2_Data/'
+    ##path = '/nfs/a201/earkpr/DataVisualisation/GASSP/Nigel_Code/Level2/AMS_GlobalDatabase/'
 
 #%%
 
@@ -94,9 +96,10 @@ for idx, variable_name in enumerate(variable_names):
     #for root, dirs, files in os.walk('/nfs/a201/earkpr/DataVisualisation/GASSP/'):
       for file in files: 
         if file.endswith('.nc'):
-            if str(variable_name) in file:           
-              if str("Station") or str("Ship") in file:           
-                ncfiles.append(os.path.join(root, file))
+            if str(variable_name) in file:    
+#                if str("Riverside") in file:
+               if str("Station") or str("Ship") in file:           
+                   ncfiles.append(os.path.join(root, file))
                
     print(ncfiles)
 
@@ -156,27 +159,53 @@ for idx, variable_name in enumerate(variable_names):
                     iris.coord_categorisation.add_month_number(cube, 'Time in seconds' , name='month_number')
 
             # Select data that is between start_year to  final_year  (cube_recent_year)
-            year_constraint = iris.Constraint(year=lambda cell: start_year < cell < final_year)
+            year_constraint = iris.Constraint(year=lambda cell: start_year-1 < cell < final_year+1)
+            
             cube_recent_year = cube.extract(year_constraint)
 
+            print(" cube_recent_year = ", cube_recent_year)
+
             if(cube_recent_year):
+
 
                 # Average from time frequency to monthly mean 
                 try:
                     cube_monthly_recent_year = cube_recent_year.aggregated_by(['month'], iris.analysis.MEAN)
+
                     print("cube_monthly_recent_year", cube_monthly_recent_year.data)
 
-                    # print("cube_monthly_recent_year.coord", cube_monthly_recent_year.coord['month'])
+                    #print("")
+                    #for coord in cube_monthly_recent_year.coords():
+                    #        print(coord.name())
+                    #        print(coord.points)
+                    #print("")
  
                     # Just select month_to_average data, e.g. just July data
+
+                    #print("")
+                    #print("")
+                    #print("")
+                    #print("cube_monthly_recent_year.aux_coord['month'].points")
+                    #print(cube_monthly_recent_year.aux_coord['month'].points)
+                    #print("")
+                    #print("")
+                    #print("")
+
                     month_slice = cube_monthly_recent_year.extract(iris.Constraint(month=str(month_to_average)))
   
-                    print("month_slice = ",month_slice)
+                    ##print("month_slice = ",month_slice)
                          
                     if(isinstance(month_slice, iris.cube.Cube)):
     	                final_cube_list.append(month_slice)
              	    else:
                         print("NOT A CUBE")
+                        ## print("cube_recent_year ",cube_recent_year.data)
+
+                        print("")
+                        for coord in cube_monthly_recent_year.coords():
+                            print(coord.name())
+                            print(coord.points)
+                        print("")
                 except:
                     print(cube_recent_year)
 

@@ -255,7 +255,7 @@ for  cube in cube_list:
                 iris.coord_categorisation.add_month_number(cube, 'Time in seconds' , name='month_number')
 
         # Select data that is between start_year to  final_year  (cube_recent_year)
-        year_constraint = iris.Constraint(year=lambda cell: start_year < cell < final_year)
+        year_constraint = iris.Constraint(year=lambda cell: start_year-1 < cell < final_year+1)
         cube_recent_year = cube.extract(year_constraint)
 
         if(cube_recent_year):
