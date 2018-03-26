@@ -48,11 +48,11 @@ month_to_average = 'Jul'  #  Need to use IRIS month naming convention.  Three le
 #variable_names = ['SO4','ORG','PM2P5']
 #variable_long_names = ['SO4_Concentrations_from_GASSP_on_N48_grid','ORG_Concentrations_from_GASSP_on_N48_grid','PM2P5_Concentrations_from_GASSP_on_N48_grid']
 
-variable_names = ['ORG']
-variable_long_names = ['ORG_Concentrations_from_GASSP_on_N48_grid']
+#variable_names = ['ORG']
+#variable_long_names = ['ORG_Concentrations_from_GASSP_on_N48_grid']
 
-#variable_names = ['PM2P5']
-#variable_long_names = ['PM2P5_Concentrations_from_GASSP_on_N48_grid']
+variable_names = ['PM2P5']
+variable_long_names = ['PM2P5_Concentrations_from_GASSP_on_N48_grid']
 
 # Dictionary of alternative variable names
 dict_of_variable_names_PM2P5 = {"PM2P5":"PM2P5"}
@@ -184,6 +184,7 @@ for idx, variable_name in enumerate(variable_names):
                     #print("station_lat_array = ", station_lat_array)
                     #print("")
 
+
         #Correct any data not on 0 to 360 longitude
         #if(float(cube.attributes['Station_Lon']) < 0 ):
         #    cube.attributes['Station_Lon'] = 360.0 + float(cube.attributes['Station_Lon']) 
@@ -199,11 +200,13 @@ for idx, variable_name in enumerate(variable_names):
 
             
         # Convert any data from ng m-3 to ug m-3
-        #print(cube.units)
+        print("cube.units")
+        print(cube.units)
+
         if(cube.units == "ng m-3"):
             cube.convert_units('ug m-3')
-            #print(cube.units)
-            #print("")
+            print(cube.units)
+            print("")
 
 
         # Define new time axis
@@ -214,6 +217,14 @@ for idx, variable_name in enumerate(variable_names):
         for  cube in cubes:
 
             if(cube.var_name in dict_of_variable_names.keys()):
+
+                # Convert any data from ng m-3 to ug m-3
+                print("cube.units")
+                print(cube.units)
+                if(cube.units == "ng m-3"):
+                    cube.convert_units('ug m-3')
+                    print(cube.units)
+                    print("")
 
                 for coord in cube.coords():
     
@@ -276,7 +287,7 @@ for idx, variable_name in enumerate(variable_names):
     
     cube_list = [cube_destination_empty, cube_average_count]
     
-    iris.save(cube_list,"/nfs/a201/earkpr/DataVisualisation/GASSP/"+str(variable_name)+"_Concentration_"+str(start_year)+"_"+str(final_year)+"_"+str(month_to_average)+"_LAMBDA_AVERAGED_SHIP_Savemoved.nc", netcdf_format='NETCDF3_CLASSIC')
+    iris.save(cube_list,"/nfs/a201/earkpr/DataVisualisation/GASSP/"+str(variable_name)+"_Concentration_"+str(start_year)+"_"+str(final_year)+"_"+str(month_to_average)+"_LAMBDA_AVERAGED_SHIP_Savemoved_FixedUnits.nc", netcdf_format='NETCDF3_CLASSIC')
 #            
 
 sys.exit()
