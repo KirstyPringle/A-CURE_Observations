@@ -48,13 +48,14 @@ month_to_average = 'Jul'  #  Need to use IRIS month naming convention.  Three le
 #variable_names = ['SO4','ORG','PM2P5']
 #variable_long_names = ['SO4_Concentrations_from_GASSP_on_N48_grid','ORG_Concentrations_from_GASSP_on_N48_grid','PM2P5_Concentrations_from_GASSP_on_N48_grid']
 
-#variable_names = ['ORG']
-#variable_long_names = ['ORG_Concentrations_from_GASSP_on_N48_grid']
+variable_names = ['ORG']
+variable_long_names = ['ORG_Concentrations_from_GASSP_on_N48_grid']
 
-variable_names = ['PM2P5']
-variable_long_names = ['PM2P5_Concentrations_from_GASSP_on_N48_grid']
+#variable_names = ['NUM']
+#variable_long_names = ['N50_Concentrations_from_GASSP_on_N48_grid']
 
 # Dictionary of alternative variable names
+dict_of_variable_names_N50 = {"N50":"N50","NUM":"N50","Total number of particles>50nm":"N50"}
 dict_of_variable_names_PM2P5 = {"PM2P5":"PM2P5"}
 dict_of_variable_names_SO4 = {"SO4":"SO4","Sulfate":"SO4","Sulphate":"SO4","S04":"SO4","particulate sulfate":"SO4"}
 dict_of_variable_names_ORG = {"ORG":"ORG","Organic":"ORG","AMS mass concentration of Org":"ORG"}
@@ -68,6 +69,8 @@ for idx, variable_name in enumerate(variable_names):
         dict_of_variable_names = dict_of_variable_names_ORG
     if (variable_name  == "PM2P5"):
         dict_of_variable_names = dict_of_variable_names_PM2P5
+    if (variable_name  == "NUM"):
+        dict_of_variable_names = dict_of_variable_names_N50
 
     try:
         print(dict_of_variable_names)
@@ -80,7 +83,6 @@ for idx, variable_name in enumerate(variable_names):
     path = '/nfs/a201/earkpr/DataVisualisation/GASSP/GASSP_Level_2_Data/'
     #path = '/nfs/a201/earkpr/DataVisualisation/GASSP/Nigel_Code/Level2/IMPROVE/'
 
-#%%
 
     #  Read in file on destination grid
 
@@ -108,27 +110,18 @@ for idx, variable_name in enumerate(variable_names):
 
 
     #iris.save(cube_destination_empty, "/nfs/a201/earkpr/DataVisualisation/GASSP/Destination_netCDF.nc")
-
-
-    #%%
-
+#%%
     ncfiles = []
     for root, dirs, files in os.walk(str(path)):
     #for root, dirs, files in os.walk('/nfs/a201/earkpr/DataVisualisation/GASSP/'):
       for file in files: 
         if file.endswith('.nc'):
             if str(variable_name) in file:    
-##               if str("Ba") in file:
-                 if str("Station") or str("Ship") in file:           
-#                 if str("Station") in file:           
-#                     if str("Ship") in file:           
-##                     if str("B") in file:           
+                 if str('Station') in file or str('Ship') in file:                           
                      ncfiles.append(os.path.join(root, file))
-                   
-#%%               
-    #print(path)            
-    #print(ncfiles)
-
+                     print("file = ",file)
+                     
+                                
     #%% 
 
     # Read all cubes in list 
@@ -139,6 +132,9 @@ for idx, variable_name in enumerate(variable_names):
     for file in ncfiles:
 
         cubes = iris.load(file)
+
+        for cube in cubes:
+            print("var_name = ",cube.var_name)
 
         station_lat_array = []
         station_lon_array = []
@@ -199,16 +195,6 @@ for idx, variable_name in enumerate(variable_names):
             print("No negative longitudes")
 
             
-        # Convert any data from ng m-3 to ug m-3
-        print("cube.units")
-        print(cube.units)
-
-        if(cube.units == "ng m-3"):
-            cube.convert_units('ug m-3')
-            print(cube.units)
-            print("")
-
-
         # Define new time axis
         new_time_unit = iris.unit.Unit('seconds since 1970-01-01 00:00:00', calendar='gregorian')
     
