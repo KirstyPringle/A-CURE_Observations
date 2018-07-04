@@ -10,6 +10,7 @@ import numpy as np
 import sys
 import datetime
 from iris.time import PartialDateTime
+import matplotlib.pyplot as plt
 
 iris.FUTURE.netcdf_no_unlimited=True
 
@@ -20,6 +21,10 @@ import cf_units
 import numpy.ma as ma
 import os
 import re
+
+from six.moves import (filter, input, map, range, zip)  # noqa
+import iris.quickplot as qplt
+from matplotlib.colors import from_levels_and_colors
 
 
 #%%
@@ -35,7 +40,7 @@ import re
 variable_name = 'AOD_440'
 variable_long_name = 'AOD_440_from_AERONET'
 
-start_year = 2005
+start_year = 2010
 final_year = 2015
 #start_year = 2010
 #final_year = 2010
@@ -52,8 +57,6 @@ MonthDict = {   '01':'JAN',
                 '10':'OCT',
                 '11':'NOV',
                 '12':'DEC'  }
-
-
 
 # Location of GASSP data
 path = '/nfs/a201/earkpr/DataVisualisation/GASSP/AERONET/AOT/LEV20/monave/'
@@ -98,19 +101,22 @@ for imonth, month in MonthDict.iteritems():
     for root, dirs, files in os.walk(str(path)):
         for file in files: 
             if file.endswith(str(imonth)+'_v3_mav_rec.nc'):
-                print("file = ",file)
 
                 file_year = file[-21:-17]
-                print ("file_year = ",int(file_year))
 
                 # Select files within the year of interest (inclusive)
                 if(start_year <= int(file_year) <= final_year):
                     print ("CHOSEN file_year = ",file_year)
 
-                if str(variable_name) in file:           
-                    if str("T") in file:           
+                    if str(variable_name) in file:           
+#                       if str("Tor") in file:           
                         ncfiles.append(os.path.join(root, file))
- 
+
+    print(ncfiles)
+
+    station_lon_array = []
+    station_lat_array = []
+
     for file in ncfiles:
 
         cubes = iris.load(file)
@@ -129,14 +135,55 @@ for imonth, month in MonthDict.iteritems():
             if(cube.var_name == 'longitude'):
                 station_lon = cube.data[0]
 
+        print(station_lon, station_lat)
         print("station_lon = ",station_lon)
         print("station_lat = ",station_lat)
 
+        station_lon_array.append(station_lon)
+        station_lat_array.append(station_lat)
+
+        print(station_lon_array)
+        print(station_lat_array)
 
         # Find lat / lon of the observation.  For N48
 
+        # Find the gridbox the observation falls in.
+
         index_lat = int((float(station_lat) + 90.0) / float(2.5))
         index_lon = int((float(station_lon) / float(3.75)))
+
+        # Find the distance between station_lat and all gridbox centers.
+
+        # convert from -180 : 180 to 0 : 360 
+        if station_lon < 0:
+            station_lon = 360 + station_lon 
+
+        lat_distance = np.absolute(station_lat - cube_destination_empty.coord('latitude').points)
+        lon_distance = np.absolute(station_lon - cube_destination_empty.coord('longitude').points)
+
+        print("lon_distance")
+        print(lon_distance)
+        print(station_lon - cube_destination_empty.coord('longitude').points)
+        print("lon points")
+        print(cube_destination_empty.coord('longitude').points)
+
+        #print("lat_distance")
+        #print(lat_distance)
+        #print("points")
+        #print(cube_destination_empty.coord('latitude').points)
+        #print np.where(lat_distance == lat_distance.min())
+        #print("chosen lat_index = ",lat_index[0])
+        #print(cube_destination_empty.coord('latitude').points[lat_index[0]])
+
+
+        lat_index_min_distance =  np.where(lat_distance == lat_distance.min())
+        lon_index_min_distance =  np.where(lon_distance == lon_distance.min())
+
+        #index_lat = int((float(station_lat) + 90.0) / float(2.5))
+        #index_lon = int((float(station_lon) / float(3.75)))
+
+        index_lat = lat_index_min_distance
+        index_lon = lon_index_min_distance
 
         print(" index_lat = ", index_lat,"station_lat = ",station_lat)
         print(" index_lon = ",index_lon, "station_lon = ",station_lon)
@@ -157,7 +204,14 @@ for imonth, month in MonthDict.iteritems():
 
     print("PRINTING")
     print(cube_destination_empty.data)
+    print("MAX = ",np.nanmax(cube_destination_empty.data))
     print(cube_average_count.data)
+
+    print("station_lon_array")
+    print(station_lon_array)
+
+    print("station_lat_array")
+    print(station_lat_array)
 
     cube_destination_empty.data = cube_destination_empty.data / cube_average_count.data
 
@@ -165,10 +219,28 @@ for imonth, month in MonthDict.iteritems():
 
     cube_list = [cube_destination_empty, cube_average_count]
 
-    iris.save(cube_list,"/nfs/a201/earkpr/DataVisualisation/GASSP/"+str(variable_name)+"_"+str(start_year)+"_"+str(final_year)+"_"+str(month)+"_LAMBDA_AVERAGED.nc")
+    iris.save(cube_list,"/nfs/a201/earkpr/DataVisualisation/GASSP/Files_For_Jill/"+str(variable_name)+"_"+str(start_year)+"_"+str(final_year)+"_"+str(month)+"_LAMBDA_AVERAGED.nc")
+
+    nice_cmap = plt.get_cmap('brewer_PuBuGn_09')
+    colors = nice_cmap([4, 5, 6, 7, 8, 9 ])
+    levels = [0.0001, 0.001,  0.01, 0.1, 1.0, 10, 100 ]
+    cmap, norm = from_levels_and_colors(levels, colors)
+
+    ##plt.subplot(1, 2, 1)
+    # Draw the block plot.
+    qplt.pcolormesh(cube_destination_empty, cmap=cmap, norm=norm)
+
+    plt.gca().coastlines()
+    plt.plot(station_lon_array, station_lat_array, linestyle='none', marker="o", markersize=0.5, alpha=0.6, c="orange", markeredgewidth=1)
+
+#    qplt.drawparallels(np.arange(int(40.125),int(44.625),1),labels=[1,0,0,0])
+#    qplt.drawmeridians(np.arange(int(-71.875),int(-66.375),1),labels=[0,0,0,1])
+
+    plt.savefig("/nfs/a201/earkpr/DataVisualisation/GASSP/Files_For_Jill/AERONET_Sites_and_Gridboxes.ps")
 
 
-sys.exit()
+
+    sys.exit()
 
 
 
