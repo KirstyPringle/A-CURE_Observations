@@ -40,13 +40,14 @@ from matplotlib.colors import from_levels_and_colors
 variable_name = 'AOD_440'
 variable_long_name = 'AOD_440_from_AERONET'
 
-start_year = 2010
+#start_year = 2005
+#final_year = 2015
+start_year = 2005
 final_year = 2015
-#start_year = 2010
-#final_year = 2010
+##final_year = 2005
 
 MonthDict = {   '01':'JAN',
-                '02':'FRB',
+                '02':'FEB',
                 '03':'MAR',
                 '04':'APR',
                 '05':'MAY',
@@ -57,6 +58,9 @@ MonthDict = {   '01':'JAN',
                 '10':'OCT',
                 '11':'NOV',
                 '12':'DEC'  }
+
+#MonthDict = {   '01':'JAN',
+#                '02':'FEB'  }
 
 # Location of GASSP data
 path = '/nfs/a201/earkpr/DataVisualisation/GASSP/AERONET/AOT/LEV20/monave/'
@@ -93,8 +97,8 @@ cube_average_count.var_name = "observations_counter"
 #%%
 
 
-
 for imonth, month in MonthDict.iteritems():
+
     print("key = ",imonth," value = ",month)
 
     ncfiles = []
@@ -107,9 +111,9 @@ for imonth, month in MonthDict.iteritems():
                 # Select files within the year of interest (inclusive)
                 if(start_year <= int(file_year) <= final_year):
                     print ("CHOSEN file_year = ",file_year)
-
+#
                     if str(variable_name) in file:           
-#                       if str("Tor") in file:           
+                       #if str("Toronto") in file:           
                         ncfiles.append(os.path.join(root, file))
 
     print(ncfiles)
@@ -194,7 +198,7 @@ for imonth, month in MonthDict.iteritems():
 
         if(np.isnan(cube_destination_empty.data[index_lat,index_lon])):    #If NaN then no previous obs data in this gridbox
             cube_destination_empty.data[index_lat,index_lon] = float(aod_data)
-            cube_average_count.data[index_lat,index_lon] = cube_average_count.data[index_lat,index_lon] + 1.0
+            cube_average_count.data[index_lat,index_lon] = 1.0
         else:
             cube_destination_empty.data[index_lat,index_lon] = cube_destination_empty.data[index_lat,index_lon] + float(aod_data)
             cube_average_count.data[index_lat,index_lon] = cube_average_count.data[index_lat,index_lon] + 1.0
@@ -219,29 +223,25 @@ for imonth, month in MonthDict.iteritems():
 
     cube_list = [cube_destination_empty, cube_average_count]
 
-    iris.save(cube_list,"/nfs/a201/earkpr/DataVisualisation/GASSP/Files_For_Jill/"+str(variable_name)+"_"+str(start_year)+"_"+str(final_year)+"_"+str(month)+"_LAMBDA_AVERAGED.nc")
+    iris.save(cube_list,"/nfs/a201/earkpr/DataVisualisation/GASSP/Files_For_Jill/"+str(variable_name)+"_"+str(start_year)+"_"+str(final_year)+"_"+str(month)+"_TEST_LAMBDA_AVERAGED.nc")
 
-    nice_cmap = plt.get_cmap('brewer_PuBuGn_09')
-    colors = nice_cmap([4, 5, 6, 7, 8, 9 ])
-    levels = [0.0001, 0.001,  0.01, 0.1, 1.0, 10, 100 ]
-    cmap, norm = from_levels_and_colors(levels, colors)
+    if month == 0:
+        nice_cmap = plt.get_cmap('brewer_PuBuGn_09')
+        colors = nice_cmap([4, 5, 6, 7, 8, 9 ])
+        levels = [0.0001, 0.001,  0.01, 0.1, 1.0, 10, 100 ]
+        cmap, norm = from_levels_and_colors(levels, colors)
 
-    ##plt.subplot(1, 2, 1)
-    # Draw the block plot.
-    qplt.pcolormesh(cube_destination_empty, cmap=cmap, norm=norm)
+        ##plt.subplot(1, 2, 1)
+        # Draw the block plot.
+        qplt.pcolormesh(cube_destination_empty, cmap=cmap, norm=norm)
 
-    plt.gca().coastlines()
-    plt.plot(station_lon_array, station_lat_array, linestyle='none', marker="o", markersize=0.5, alpha=0.6, c="orange", markeredgewidth=1)
+        plt.gca().coastlines()
+        plt.plot(station_lon_array, station_lat_array, linestyle='none', marker="o", markersize=0.5, alpha=0.6, c="orange", markeredgewidth=1)
 
-#    qplt.drawparallels(np.arange(int(40.125),int(44.625),1),labels=[1,0,0,0])
-#    qplt.drawmeridians(np.arange(int(-71.875),int(-66.375),1),labels=[0,0,0,1])
+        #    qplt.drawparallels(np.arange(int(40.125),int(44.625),1),labels=[1,0,0,0])
+        #    qplt.drawmeridians(np.arange(int(-71.875),int(-66.375),1),labels=[0,0,0,1])
 
-    plt.savefig("/nfs/a201/earkpr/DataVisualisation/GASSP/Files_For_Jill/AERONET_Sites_and_Gridboxes.ps")
-
-
-
-    sys.exit()
-
+        plt.savefig("/nfs/a201/earkpr/DataVisualisation/GASSP/Files_For_Jill/AERONET_Sites_and_Gridboxes.ps")
 
 
 
