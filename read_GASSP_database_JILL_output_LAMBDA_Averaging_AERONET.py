@@ -40,10 +40,10 @@ from matplotlib.colors import from_levels_and_colors
 variable_name = 'AOD_440'
 variable_long_name = 'AOD_440_from_AERONET'
 
-#start_year = 2005
-#final_year = 2015
 start_year = 2005
 final_year = 2015
+#start_year = 2005
+#final_year = 2010
 ##final_year = 2005
 
 MonthDict = {   '01':'JAN',
@@ -59,7 +59,8 @@ MonthDict = {   '01':'JAN',
                 '11':'NOV',
                 '12':'DEC'  }
 
-#MonthDict = {   '01':'JAN',
+MonthDict = {   '01':'JAN'}
+#,
 #                '02':'FEB',
 #                '03':'MAR' }
 
@@ -100,10 +101,11 @@ for imonth, month in MonthDict.iteritems():
 
     for root, dirs, files in os.walk(str(path)):
         for file in files: 
+            print(file)
             if file.endswith(str(imonth)+'_v3_mav_rec.nc'):
 
                 file_year = file[-21:-17]
-
+               
                 # Select files within the year of interest (inclusive)
                 if(start_year <= int(file_year) <= final_year):
                    ## print ("CHOSEN file_year = ",file_year)
@@ -112,7 +114,7 @@ for imonth, month in MonthDict.iteritems():
                        ##if str("Toronto") in file:           
                         ncfiles.append(os.path.join(root, file))
 
-    ##print(ncfiles)
+    print(ncfiles)
 
     station_lon_array = []
     station_lat_array = []
