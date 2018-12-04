@@ -3,7 +3,7 @@
 # K. Pringle
 #
 # Code to convert GASSP Level 2 data onto a destination gridded netCDF grid.
-# Code will also create average of a single month (e.g. July) over multiple years.
+# Code will also create average of a single month (e.g. July) over multiple years.fi
 
 #!/usr/bin/python2.7
 #########!/usr/bin/python3.6
@@ -12,7 +12,6 @@
 import iris
 import numpy as np
 import sys
-import datetime
 from iris.time import PartialDateTime
 
 iris.FUTURE.netcdf_no_unlimited=True
@@ -22,6 +21,7 @@ import datetime
 import iris.unit
 import cf_units
 import numpy.ma as ma
+import math
 import os
 import re
 
@@ -51,10 +51,10 @@ if iSORPES:
     start_year = 2005
     final_year = 2015
 
-month_to_average = 'Jul'  #  Need to use IRIS month naming convention.  Three letter month name
+##month_to_average = 'Jul'  #  Need to use IRIS month naming convention.  Three letter month name
 
 months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
-##months = ['Jul']
+##months = ['Nov']
 
 for imonth in range(len(months)):
     month_to_average = str(months[imonth])
@@ -152,6 +152,7 @@ for imonth in range(len(months)):
                                  ncfiles.append(os.path.join(root, file))
                                  print("ncfiles = ",ncfiles)
                          else:
+                             ##if str('Melpitz_2008-09-15') in file:                   
                              ncfiles.append(os.path.join(root, file))
                                  
                                  
@@ -170,7 +171,7 @@ for imonth in range(len(months)):
        
 #    
         for file in ncfiles:
-            print("file = ",file)
+            #print("file = ",file)
     
             cubes = iris.load(file)
             
@@ -222,9 +223,9 @@ for imonth in range(len(months)):
                         station_lat_array.append(float(cube.attributes['Station_Lat']))
         
                         # Convert lon from -180 to 180 to 0 to 360    
-                        print("station_lon_array = ", station_lon_array)
-                        print("station_lat_array = ", station_lat_array)
-                        print("")
+                        #print("station_lon_array = ", station_lon_array)
+                        #print("station_lat_array = ", station_lat_array)
+                        #print("")
     
     
             #Correct any data not on 0 to 360 longitude
@@ -248,20 +249,23 @@ for imonth in range(len(months)):
         
             #print("cubes = ",cubes)
     
-            for  cube in cubes:
-                #print("cube loop")
-                #print("cube.var_name=",cube.var_name,"dict_of_variable_names.keys()",dict_of_variable_names.keys())
+            for cube in cubes:
+                print("cube loop")
+                print("cube.var_name=",cube.var_name,"dict_of_variable_names.keys()",dict_of_variable_names.keys())
     
                 if(cube.var_name in dict_of_variable_names.keys()):
                     print("NAME IN DICT OF VARIABLE NAMES")
+                    print("file = ",file)
                     print(cube.var_name)
                     print("")
                     
                     # Set any negative values to np.NaN
-                    print("min bef = ",np.nanmin(cube.data))
-                    cube.data[cube.data < 0.0] = np.NAN
-                    print("min aft = ",np.nanmin(cube.data))
-                    print("")                  
+                    #print("min bef = ",np.nanmin(cube.data))
+                    cube.data[cube.data < 0.0] = np.NAN                   
+                    cube.data = ma.masked_invalid(cube.data)
+
+                    #print("min aft = ",np.nanmin(cube.data))
+                    #print("")                  
     
                     # Convert any data from ng m-3 to ug m-3
                     #print("cube.units")
@@ -330,12 +334,12 @@ for imonth in range(len(months)):
 
                     #print("After year constraint " )
                     cube_recent_year = cube.extract(year_constraint)      
-                    print(" cube_recent_year = ", cube_recent_year)
+                    #print(" cube_recent_year = ", cube_recent_year)
                                                    
-                    try:
-                        print(" cube_recent_year.data = ", cube_recent_year.data)
-                    except:
-                        print("no data")
+                    #try:
+                    #    #print(" cube_recent_year.data = ", cube_recent_year.data)
+                    #except:
+                    #    print("no data")
                    
         
                     if(cube_recent_year):
@@ -345,56 +349,130 @@ for imonth in range(len(months)):
                         try:
                             cube_monthly_recent_year = cube_recent_year.aggregated_by(['month'], iris.analysis.MEAN)
                             month_slice = cube_monthly_recent_year.extract(iris.Constraint(month=str(month_to_average)))
+
+                            print("month_to_average=",month_to_average)
+
+                            #print("SIZE / SHAPE")
+                            #print(cube_monthly_recent_year.shape)
+                            #print("")
+                            #print("")                            
     
                             if(np.nonzero(month_slice)): 
-                                print("month_slice is non zero")
+                                #print("month_slice is non zero")
                                 #print("month_slice",month_slice.data)
-                                #print("")
-                                #print("") 
-                                #print("")
+                                print("")
+
            
                             if(isinstance(month_slice, iris.cube.Cube)):
                                 final_cube_list.append(month_slice)
                             else:
                                 print("NOT A CUBE")
                         except:
-                                print(cube_recent_year)
+                            print(cube_recent_year)
         
-                #print("final_cube_list loop")
-                #print("final_cube_list ",final_cube_list)
+                        print("final_cube_list loop")
+                        print("final_cube_list ",final_cube_list)
+                
     
-                for cube in final_cube_list:
-    
-                    for iobs in range(len(station_lon_array)):
-    
-                        print("lat = ",station_lat_array[iobs]," lon = ",station_lat_array[iobs])
-    
-                        # Find lat / lon of the observation.  For N48
-                        index_lat = int((float(station_lat_array[iobs]) + 90.0) / float(2.5))
-                        index_lon = int((float(station_lon_array[iobs]) / float(3.75)))
-    
-                        if(np.isnan(cube_destination_empty.data[index_lat,index_lon])):    #If NaN then no previous obs data in this gridbox
-            
-                            cube_destination_empty.data[index_lat,index_lon] = float(cube.data)
-                            cube_average_count.data[index_lat,index_lon] = cube_average_count.data[index_lat,index_lon] + 1.0
-        
-                        else:
-                            
-                            cube_destination_empty.data[index_lat,index_lon] = float(cube.data)
-                            ##cube_destination_empty.data[index_lat,index_lon] = cube_destination_empty.data[index_lat,index_lon] + float(cube.data)
-                            cube_average_count.data[index_lat,index_lon] = cube_average_count.data[index_lat,index_lon] + 1.0
-        
-            # Average data in locations with more than one observation.
-            # cube_destination_empty.data = cube_destination_empty.data / cube_average_count.data 
-            
+                        for cube in final_cube_list:
 
+                            print("in final_cube_list cube.data=",cube.data)
     
-        cube_list = [cube_destination_empty, cube_average_count]
+                            for iobs in range(len(station_lon_array)):
+    
+                                print("file = ",file)
+                                print("len(station_lon_array) = ",len(station_lon_array))
+                                print("lat = ",station_lat_array[iobs]," lon = ",station_lon_array[iobs])
+
+                                if(station_lat_array[iobs] < -8000):
+                                    station_lat_array[iobs] = np.NaN
+                                if(station_lon_array[iobs] < -8000):
+                                    station_lon_array[iobs] = np.NaN
+    
+                                if (not math.isnan(station_lon_array[iobs])) and (not math.isnan(station_lat_array[iobs])):
+                                    
+                                    # Find lat / lon of the observation.  For N48
+                                    index_lat = int((float(station_lat_array[iobs]) + 90.0) / float(2.5))
+                                    index_lon = int((float(station_lon_array[iobs]) / float(3.75)))
+                        
+                                    print("in final_cube_list cube.data = ",cube.data)
+                                    print("in final_cube_list cube.data = ",float(cube.data))
+    
+                                    if(np.isnan(cube_destination_empty.data[index_lat,index_lon])):    #If NaN then no previous obs data in this gridbox
+                
+                                        cube_destination_empty.data[index_lat,index_lon] = float(cube.data)
+                                        cube_average_count.data[index_lat,index_lon] = cube_average_count.data[index_lat,index_lon] + 1.0
+
+                                        print("A index_lat =",index_lat,"index_lon = ",index_lon)
+                                        print("A cube_destination_empty.data[index_lat,index_lon] = ",cube_destination_empty.data[index_lat,index_lon])
+                                        print("A cube_average_count.data[index_lat,index_lon] ",cube_average_count.data[index_lat,index_lon])
         
-        print(cube_list)
+                                    else:
+                                        ####cube_destination_empty.data[index_lat,index_lon] = float(cube.data)
+                                        cube_destination_empty.data[index_lat,index_lon] = cube_destination_empty.data[index_lat,index_lon] + float(cube.data)
+                                        cube_average_count.data[index_lat,index_lon] = cube_average_count.data[index_lat,index_lon] + 1.0
+
+                                        print("B index_lat =",index_lat,"index_lon = ",index_lon)
+                                        print("B cube_destination_empty.data[index_lat,index_lon] = ",cube_destination_empty.data[index_lat,index_lon])
+                                        print("B cube_average_count.data[index_lat,index_lon] ",cube_average_count.data[index_lat,index_lon])
+
+                                    
+        
+        # Average data in locations with more than one observation.
+    
+        # Mask zero values
+
+        #print("before mask = ",cube_average_count.data)
+        print("before mask mean= ",np.mean(cube_average_count.data))
+
+        cube_average_count.data = ma.masked_where(cube_average_count.data == 0, cube_average_count.data)
+        #cube_destination_empty = ma.masked_where(cube_average_count.data == 0, cube_destination_empty.data)
+ 
+        #print("after mask mean= ",np.mean(cube_average_count.data))
+        print("after mask = ",cube_average_count.data)
+
+
+        #print("Bef bef bef2 cube_destination_empty.data =",cube_destination_empty.data[np.logical_not(np.isnan(cube_destination_empty.data))])
+
+        #cube_destination_empty.data = ma.masked_invalid(cube_destination_empty.data)
+        #cube_average_count.data = ma.masked_invalid(cube_average_count.data)
+
+        #print("Bef cube_destination_empty.data =",cube_destination_empty.data[np.logical_not(np.isnan(cube_destination_empty.data))])
+
+        #print("Bef cube_destination_empty.data",cube_destination_empty.data)
+        #print("Bef cube_average_count.data",cube_average_count.data)
+
+        #cube_destination_empty.data = ma.masked_invalid(cube_destination_empty.data)
+        #cube_average_count.data = ma.masked_invalid(cube_average_count.data)
+
+        #print("Aft cube_destination_empty.data",cube_destination_empty.data)
+        #print("Aft cube_average_count.data",cube_average_count.data)
+
+        print("bef division mean= ",np.nanmean(cube_destination_empty.data))
+
+        #cube_destination_empty.data = cube_destination_empty.data / cube_average_count.data 
+        print(cube_destination_empty)
+        print(cube_average_count)
+
+        #cube_destination_empty.data = iris.analysis.maths.divide(cube_destination_empty.data, cube_average_count.data)
+        cube_destination_empty = iris.analysis.maths.divide(cube_destination_empty, cube_average_count)
+        cube_destination_empty.long_name = str(variable_long_name)
+
+        print("after division mean= ",np.mean(cube_destination_empty.data))
+        #print("after division mean= ",np.mean(final.data))
+
+        print("cube_average_count mean= ",np.mean(cube_average_count.data))
+        print("cube_average_count = ",np.mean(cube_average_count.data))
+
+        ##print("Aft cube_destination_empty.data =",cube_destination_empty.data[cube_destination_empty.data > 0])
+        #print("Aft cube_destination_empty.data =",cube_destination_empty.data[np.logical_not(np.isnan(cube_destination_empty.data))])
+ 
+        #print("dest empty nonzero = ",cube_destination_empty.data[cube_destination_empty.data > 0.0])
+
+        cube_list = [cube_average_count, cube_destination_empty]
         
         if iSORPES:
-            iris.save(cube_list,"/nfs/a201/earkpr/DataVisualisation/GASSP/"+str(variable_name)+"_Concentration_"+str(start_year)+"_"+str(final_year)+"_"+str(month_to_average)+"_LAMBDA_AVERAGED_SHIP_Savemoved_FixedUnits_SOPRES.nc", netcdf_format='NETCDF3_CLASSIC')
+            iris.save(cube_list,"/nfs/a201/earkpr/DataVisualisation/GASSP/"+str(variable_name)+"_Concentration_"+str(start_year)+"_"+str(final_year)+"_"+str(month_to_average)+"_LAMBDA_AVERAGED_SHIP_Savemoved_FixedUnits_SORPES.nc", netcdf_format='NETCDF3_CLASSIC')
         else:
             iris.save(cube_list,"/nfs/a201/earkpr/DataVisualisation/GASSP/"+str(variable_name)+"_Concentration_"+str(start_year)+"_"+str(final_year)+"_"+str(month_to_average)+"_LAMBDA_AVERAGED_SHIP_Savemoved_FixedUnits_ALLDATA_no_negative.nc", netcdf_format='NETCDF3_CLASSIC')
             
